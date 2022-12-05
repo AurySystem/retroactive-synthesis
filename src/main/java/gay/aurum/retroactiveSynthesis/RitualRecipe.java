@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.unascribed.lib39.machination.ingredient.BlockIngredient;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.block.pattern.BlockPattern;
 import net.minecraft.block.pattern.BlockPatternBuilder;
 import net.minecraft.block.pattern.CachedBlockPosition;
@@ -20,7 +19,6 @@ import net.minecraft.recipe.ShapedRecipe;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 
 import java.util.Map;
@@ -36,12 +34,14 @@ public class RitualRecipe implements Recipe<Inventory> {
 	protected final ItemStack item;
 	protected final Identifier entity;
 	protected final Identifier feature;
+	protected final int craftime;
 	protected final BlockPos offset;
 
-	public RitualRecipe(Identifier id, String group, ItemStack catalyst, BlockPattern ritual, BlockPos offset, ItemStack item, Identifier entity, Identifier feature){
+	public RitualRecipe(Identifier id, String group, ItemStack catalyst, int craftime, BlockPattern ritual, BlockPos offset, ItemStack item, Identifier entity, Identifier feature){
 		this.id = id;
 		this.group = group;
 		this.catalyst = catalyst;
+		this.craftime = craftime;
 		this.ritual = ritual;
 		this.offset = offset;
 		this.item = item;
@@ -88,6 +88,30 @@ public class RitualRecipe implements Recipe<Inventory> {
 		return RetroactiveSynthesis.RitualType;
 	}
 
+	public BlockPattern getRitual(){
+		return this.ritual;
+	}
+
+	public int getSummontime() {
+		return craftime;
+	}
+
+	public ItemStack getCatalyst(){
+		return this.catalyst.copy();
+	}
+
+	public Identifier getEntity() {
+		return this.entity;
+	}
+
+	public Identifier getFeature() {
+		return feature;
+	}
+
+	public BlockPos getOffset() {
+		return offset;
+	}
+
 	public static Predicate<CachedBlockPosition> matchesBlock(Predicate<Block> block) {
 		return pos -> pos != null && block.test(pos.getBlockState().getBlock());
 	}
@@ -105,6 +129,7 @@ public class RitualRecipe implements Recipe<Inventory> {
 		public RitualRecipe read(Identifier id, JsonObject obj) {
 			String group = JsonHelper.getString(obj,"group");
 			ItemStack cat = ShapedRecipe.outputFromJson(obj.getAsJsonObject("catalyst"));
+			int time = JsonHelper.getInt(obj, "summon-time")
 
 			JsonArray posar = JsonHelper.getArray(obj,"offset", defualtPos());
 			BlockPos off = new BlockPos(posar.get(0).getAsInt(),posar.get(1).getAsInt(),posar.get(2).getAsInt());
@@ -132,7 +157,7 @@ public class RitualRecipe implements Recipe<Inventory> {
 				pattern.where(entry.getKey().charAt(0), matchesBlock(a));
 			}
 
-			return new RitualRecipe(id, group, cat, pattern.build(), off, item, entity, feature);
+			return new RitualRecipe(id, group, cat,time, pattern.build(), off, item, entity, feature);
 		}
 
 		@Override

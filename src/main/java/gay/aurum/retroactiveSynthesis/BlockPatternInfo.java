@@ -1,6 +1,7 @@
 package gay.aurum.retroactiveSynthesis;
 
 import com.google.common.annotations.VisibleForTesting;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.pattern.BlockPattern;
 import net.minecraft.block.pattern.CachedBlockPosition;
 import net.minecraft.util.math.BlockPos;
@@ -33,7 +34,7 @@ public class BlockPatternInfo extends BlockPattern {
 	public ExtraBlockInfo getInfoAtPos(BlockPos pos){
 		return this.info[pos.getX()][pos.getY()][pos.getZ()];
 	}
-	public record ExtraBlockInfo(boolean preserve, boolean particleSource) {
+	public record ExtraBlockInfo(BlockState remainder, boolean particleSource) {
 	}
 
 }
