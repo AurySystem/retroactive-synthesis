@@ -1,12 +1,12 @@
 package gay.aurum.retroactiveSynthesis;
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import org.quiltmc.loader.api.ModContainer;
 import org.quiltmc.qsl.base.api.entrypoint.ModInitializer;
+import org.quiltmc.qsl.lifecycle.api.event.ServerTickEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,8 @@ public class RetroactiveSynthesis implements ModInitializer {
 	@Override
 	public void onInitialize(ModContainer mod) {
 		LOGGER.info("{}: Loaded, have a good day", mod.metadata().name());
-		org.quiltmc.qsl.lifecycle.api.event.ServerTickEvents.END.register(CheckItemTick::serverWorldEndTick);
+		ServerTickEvents.START.register(CheckItemTick::serverWorldStartTick);
+		ServerTickEvents.END.register(CheckItemTick::serverWorldEndTick);
 
 	}
 	private static <T extends Recipe<?>> RecipeType<T> registerType(String id) {

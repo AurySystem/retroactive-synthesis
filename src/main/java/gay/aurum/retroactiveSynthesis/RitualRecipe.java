@@ -129,7 +129,7 @@ public class RitualRecipe implements Recipe<Inventory> {
 		public RitualRecipe read(Identifier id, JsonObject obj) {
 			String group = JsonHelper.getString(obj,"group");
 			ItemStack cat = ShapedRecipe.outputFromJson(obj.getAsJsonObject("catalyst"));
-			int time = JsonHelper.getInt(obj, "summon-time")
+			int time = JsonHelper.getInt(obj, "summon-time");
 
 			JsonArray posar = JsonHelper.getArray(obj,"offset", defualtPos());
 			BlockPos off = new BlockPos(posar.get(0).getAsInt(),posar.get(1).getAsInt(),posar.get(2).getAsInt());
@@ -164,12 +164,13 @@ public class RitualRecipe implements Recipe<Inventory> {
 		public RitualRecipe read(Identifier id, PacketByteBuf buf) {
 			String group = buf.readString();
 			ItemStack cat = buf.readItemStack();
+			//todo networks
 			return null;
 		}
 
 		@Override
 		public void write(PacketByteBuf buf, RitualRecipe recipe) {
-
+			//todo networks
 		}
 	}
 }
