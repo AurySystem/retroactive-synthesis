@@ -6,6 +6,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.unascribed.lib39.machination.ingredient.BlockIngredient;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.pattern.BlockPattern;
 import net.minecraft.block.pattern.BlockPatternBuilder;
 import net.minecraft.block.pattern.CachedBlockPosition;
@@ -19,7 +21,10 @@ import net.minecraft.recipe.ShapedRecipe;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.JsonHelper;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+import org.quiltmc.qsl.recipe.api.serializer.QuiltRecipeSerializer;
 
 import java.util.Map;
 import java.util.function.Predicate;
@@ -29,15 +34,15 @@ public class RitualRecipe implements Recipe<Inventory> {
 	protected final Identifier id;
 	protected final String group;
 	protected final ItemStack catalyst;
-	protected final BlockPattern ritual;
+	protected final BlockPatternInfo ritual;
 
 	protected final ItemStack item;
 	protected final Identifier entity;
 	protected final Identifier feature;
 	protected final int craftime;
-	protected final BlockPos offset;
+	protected final Vec3d offset;
 
-	public RitualRecipe(Identifier id, String group, ItemStack catalyst, int craftime, BlockPattern ritual, BlockPos offset, ItemStack item, Identifier entity, Identifier feature){
+	public RitualRecipe(Identifier id, String group, ItemStack catalyst, int craftime, BlockPatternInfo ritual, Vec3d offset, ItemStack item, Identifier entity, Identifier feature){
 		this.id = id;
 		this.group = group;
 		this.catalyst = catalyst;
@@ -108,7 +113,7 @@ public class RitualRecipe implements Recipe<Inventory> {
 		return feature;
 	}
 
-	public BlockPos getOffset() {
+	public Vec3d getOffset() {
 		return offset;
 	}
 
@@ -116,7 +121,7 @@ public class RitualRecipe implements Recipe<Inventory> {
 		return pos -> pos != null && block.test(pos.getBlockState().getBlock());
 	}
 
-	public static class RitualSerializer implements RecipeSerializer<RitualRecipe>{
+	public static class RitualSerializer implements QuiltRecipeSerializer<RitualRecipe> {
 		JsonArray defualtPos(){
 			JsonArray l = new JsonArray();
 			l.add(0);
@@ -127,24 +132,26 @@ public class RitualRecipe implements Recipe<Inventory> {
 
 		@Override
 		public RitualRecipe read(Identifier id, JsonObject obj) {
-			String group = JsonHelper.getString(obj,"group");
+			String group = JsonHelper.getString(obj,"group","");
 			ItemStack cat = ShapedRecipe.outputFromJson(obj.getAsJsonObject("catalyst"));
-			int time = JsonHelper.getInt(obj, "summon-time");
+			int time = JsonHelper.getInt(obj, "summon-time",0);
 
 			JsonArray posar = JsonHelper.getArray(obj,"offset", defualtPos());
-			BlockPos off = new BlockPos(posar.get(0).getAsInt(),posar.get(1).getAsInt(),posar.get(2).getAsInt());
+			Vec3d off = new Vec3d(posar.get(0).getAsInt(),posar.get(1).getAsInt(),posar.get(2).getAsInt());
 
 			ItemStack item = ShapedRecipe.outputFromJson(obj.getAsJsonObject("item"));
-			Identifier entity = new Identifier(JsonHelper.getString(obj, "entity"));
-			Identifier feature = new Identifier(JsonHelper.getString(obj, "feature"));
+			Identifier entity = new Identifier(JsonHelper.getString(obj, "entity",""));
+			Identifier feature = new Identifier(JsonHelper.getString(obj, "feature",""));
 
 			BlockPatternBuilder pattern = BlockPatternBuilder.start();
+			BlockPatternInfo.builder build = new BlockPatternInfo.builder();
 			JsonArray patternRows = JsonHelper.getArray(obj,"pattern");
 			String[] rowsAr = new String[patternRows.size()];
 			for(int i = 0; i < patternRows.size(); i++){
 				rowsAr[i] = patternRows.get(i).getAsString();
 			}
 			pattern.aisle(rowsAr);
+			build.layer(rowsAr);
 			JsonObject keys = JsonHelper.getObject(obj,"key");
 			for(Map.Entry<String, JsonElement> entry : keys.entrySet()) {
 				if (entry.getKey().length() != 1) {
@@ -154,10 +161,19 @@ public class RitualRecipe implements Recipe<Inventory> {
 					throw new JsonSyntaxException("Invalid key entry: ' ' is a reserved symbol.");
 				}
 				BlockIngredient a = BlockIngredient.fromJson(entry.getValue());
+				if (entry.getValue().isJsonObject()) {
+					JsonObject ah = entry.getValue().getAsJsonObject();
+					boolean consume = JsonHelper.getBoolean(ah, "consume", false) || JsonHelper.hasString(ah, "remainder");
+					BlockState block = JsonHelper.hasString(ah, "remainder")? Registry.BLOCK.get(Identifier.tryParse(ah.get("remainder").getAsString())).getDefaultState():
+							Blocks.AIR.getDefaultState();
+					build.key(entry.getKey().charAt(0), new BlockPatternInfo.ExtraBlockInfo(consume,block,JsonHelper.getBoolean(ah, "particle", false)));
+				}
 				pattern.where(entry.getKey().charAt(0), matchesBlock(a));
 			}
 
-			return new RitualRecipe(id, group, cat,time, pattern.build(), off, item, entity, feature);
+
+
+			return new RitualRecipe(id, group, cat, time, build.build(pattern.build()), off, item, entity, feature);
 		}
 
 		@Override
@@ -171,6 +187,11 @@ public class RitualRecipe implements Recipe<Inventory> {
 		@Override
 		public void write(PacketByteBuf buf, RitualRecipe recipe) {
 			//todo networks
+		}
+
+		@Override
+		public JsonObject toJson(RitualRecipe recipe) {
+			return null;
 		}
 	}
 }

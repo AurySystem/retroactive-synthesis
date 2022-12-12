@@ -1,0 +1,32 @@
+{
+  "type": "retroactive-synthesis:ritual",
+  "summon-time": 23,
+  "catalyst": {
+    "item": "minecraft:salmon"
+  },
+  "key": {
+    "#": {
+      "block": "minecraft:redstone_block",
+      "consume": false,
+      "particle": true
+    }
+  },
+  "pattern": [
+    "# # # # #",
+    "### # ###",
+    "# # # # #",
+    "### # ###",
+    "# ##### #",
+    "### # ###",
+    "# # # # #",
+    "### # ###",
+    "# # # # #"
+  ],
+  "item": {
+    "count": 12,
+    "item": "minecraft:bone"
+  },
+  "entity": "minecraft:cat",
+  "feature": "minecraft:end_island",
+  "offset": [0,12,0]
+}
