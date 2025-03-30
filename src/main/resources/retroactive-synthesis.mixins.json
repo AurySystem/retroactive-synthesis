@@ -4,10 +4,12 @@
   "package": "gay.aurum.retroactiveSynthesis.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-      ],
+    "ShuffleMixin",
+    "TitleScreenMixin"
+  ],
   "client": [
   ],
   "injectors": {
     "defaultRequire": 1
-	}
+  }
 }

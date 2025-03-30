@@ -1,23 +1,21 @@
 package gay.aurum.retroactiveSynthesis;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.pattern.BlockPattern;
 import net.minecraft.block.pattern.CachedBlockPosition;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.SpawnReason;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.BuiltinRegistries;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.WorldEvents;
 
 import java.util.*;
@@ -88,9 +86,10 @@ public class CheckItemTick {
 						Vec3d off = recipe.getOffset();
 						BlockPos corner = key.corner1();
 						BlockPos corner2 = key.corner2();
-						double centerX = (corner.getX()-corner2.getX())/2d+corner.getX() +off.x +0.5;
-						double centerY = (corner.getY()-corner2.getY())/2d+corner.getY() +off.y +0.5;
-						double centerZ = (corner.getZ()-corner2.getZ())/2d+corner.getZ() +off.z +0.5;
+						double centerX = (corner.getX()-corner2.getX()) / 2d + corner2.getX() +off.x +0.5;
+						double centerY = (corner.getY()-corner2.getY()) / 2d + corner2.getY() +off.y +0.5;
+						double centerZ = (corner.getZ()-corner2.getZ()) / 2d + corner2.getZ() +off.z +0.5;
+						BlockPos cen = new BlockPos(centerX,centerY,centerZ);
 						if(recipe.item !=null){
 							ItemEntity item = new ItemEntity(world, centerX, centerY, centerZ, recipe.getOutput());
 							item.setToDefaultPickupDelay();
@@ -99,13 +98,26 @@ public class CheckItemTick {
 						if (!recipe.getEntity().equals(blankid)){
 							NbtCompound nbtCompound = new NbtCompound();
 							nbtCompound.putString("id", recipe.getEntity().toString());
-							Entity entity2 = EntityType.loadEntityWithPassengers(nbtCompound, world, entityx -> {
-								entityx.refreshPositionAndAngles(centerX, centerY, centerZ, entityx.getYaw(), entityx.getPitch());
-								return entityx;
-							});
-							if(entity2!=null){
-								world.spawnEntity(entity2);
+							Optional<EntityType<?>> entityTypeMaybe = EntityType.fromNbt(nbtCompound);
+							Entity spawned = null;
+							if(entityTypeMaybe.isPresent()){
+								spawned = entityTypeMaybe.get().create(world);
 							}
+
+							if (spawned != null) {
+								if(spawned instanceof MobEntity mob){
+									mob.initialize(world, world.getLocalDifficulty(cen), SpawnReason.COMMAND, null, null);
+								}
+								spawned.refreshPositionAndAngles(cen, 0.0F, 0.0F);
+								world.spawnEntityAndPassengers(spawned);
+							}
+//							Entity entity2 = EntityType.loadEntityWithPassengers(nbtCompound, world, entityx -> {
+//								entityx.refreshPositionAndAngles(centerX, centerY, centerZ, entityx.getYaw(), entityx.getPitch());
+//								return entityx;
+//							});
+//							if(entity2!=null){
+//								world.spawnEntity(entity2);
+//							}
 						}
 						if (!recipe.getFeature().equals(blankid)){
 
